@@ -31,6 +31,14 @@ final fareConfigForZoneProvider = StreamProvider.family<FareConfigModel?, ({Stri
 /// Provider to hold the current zone name (set by the app based on user location)
 final currentZoneNameProvider = StateProvider<String>((ref) => '');
 
+/// Stream of surge pricing rules from Firestore
+final surgeRulesStreamProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('surge_pricing_rules')
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => d.data()).toList());
+});
+
 /// Calculate fare for a ride using zone-based pricing
 /// Falls back to vehicleTypes defaults if no fare config exists for the zone
 final calculateFareProvider = Provider.family<double, ({

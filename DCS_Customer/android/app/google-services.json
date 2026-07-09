@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1012868777116",
+    "project_id": "dadacabs-099",
+    "storage_bucket": "dadacabs-099.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012868777116:android:d4b195b448a04627aa9959",
+        "android_client_info": {
+          "package_name": "dev.hyderali.DCS_Partner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDr_WetzB81LgxHTveFB35nF0wgb6EC6ko"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012868777116:android:7c6dd55e368cedbcaa9959",
+        "android_client_info": {
+          "package_name": "dev.hyderali.DCS_user"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDr_WetzB81LgxHTveFB35nF0wgb6EC6ko"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
