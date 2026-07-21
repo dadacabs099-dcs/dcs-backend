@@ -25,11 +25,16 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
+// Modified by Jayant Pandit on 2026-07-22 10:00:00
+// Reason: Fix false-negative when isOnline===false but driverStatus==='online'.
+// All 23 drivers had isOnline: false (boolean) with driverStatus: 'online'.
+// The old code returned isOnline (false) immediately without checking driverStatus.
+// Now: only return true on explicit isOnline truthy; fall through to driverStatus for false/undefined.
 function isDriverOnline(data) {
   if (data.isOnline !== undefined) {
-    if (typeof data.isOnline === 'boolean') return data.isOnline;
-    if (typeof data.isOnline === 'string') return data.isOnline.toLowerCase() === 'true';
-    if (typeof data.isOnline === 'number') return data.isOnline === 1;
+    if (typeof data.isOnline === 'boolean' && data.isOnline) return true;
+    if (typeof data.isOnline === 'string' && data.isOnline.toLowerCase() === 'true') return true;
+    if (typeof data.isOnline === 'number' && data.isOnline === 1) return true;
   }
   const status = (data.driverStatus || data.status || '').toString().toLowerCase();
   return ['online', 'idle', 'active', 'available'].includes(status);
@@ -174,14 +179,41 @@ app.post('/notify-drivers', async (req, res) => {
       return res.json({ message: 'Trip not pending, skipping' });
     }
 
-    const pickupLat = trip.pickupLat ?? trip.pickupLoc?.latitude ?? 0;
-    const pickupLng = trip.pickupLng ?? trip.pickupLoc?.longitude ?? 0;
-    if (!pickupLat || !pickupLng) {
+    // Modified by Jayant Pandit on 2026-07-14 10:00:00
+    // Reason: Handle GeoFlutterFire nested format for pickupLoc.
+    // GeoFlutterFire stores location as {geopoint: GeoPoint, geohash: String}
+    // where GeoPoint has latitude/longitude properties. Also handle direct
+    // latitude/longitude keys and _latitude/_longitude internal format.
+    // Previously only tried trip.pickupLoc?.latitude which returned undefined
+    // for GeoFlutterFire format, causing "No pickup location on trip" error.
+    let pickupLat = trip.pickupLat;
+    let pickupLng = trip.pickupLng;
+    const pickupLocation = trip.pickupLocation;
+    if (pickupLat == null || pickupLng == null) {
+      const pl = trip.pickupLoc;
+      if (pl) {
+        pickupLat = pl.latitude || pl.lat;
+        pickupLng = pl.longitude || pl.lng || pl.lon;
+        if ((pickupLat == null || pickupLng == null) && pl.geopoint) {
+          pickupLat = pl.geopoint.latitude || pl.geopoint._latitude;
+          pickupLng = pl.geopoint.longitude || pl.geopoint._longitude;
+        }
+        if (pickupLat == null || pickupLng == null) {
+          pickupLat = pl._latitude || pl.lat;
+          pickupLng = pl._longitude || pl.lng || pl.lon;
+        }
+      }
+    }
+    if ((pickupLat == null || pickupLng == null) && pickupLocation) {
+      pickupLat = pickupLocation.latitude || pickupLocation._latitude || pickupLocation.lat;
+      pickupLng = pickupLocation.longitude || pickupLocation._longitude || pickupLocation.lng || pickupLocation.lon;
+    }
+    if (pickupLat == null || pickupLng == null) {
       return res.status(400).json({ error: 'No pickup location on trip' });
     }
 
     const carType = trip.carType || '';
-    const nearbyDrivers = await findNearbyDrivers(pickupLat, pickupLng, 5, carType);
+    const nearbyDrivers = await findNearbyDrivers(pickupLat, pickupLng, 10, carType);
 
     if (nearbyDrivers.length === 0) {
       return res.json({ message: 'No matching drivers found', driversFound: 0 });
@@ -198,6 +230,26 @@ app.post('/notify-drivers', async (req, res) => {
 
     const estimatedFare = trip.estimatedFare || trip.fare || 0;
 
+    // Modified by Jayant Pandit on 2026-07-14 10:00:00
+    // Reason: Parse dropoffLoc using same GeoFlutterFire-aware logic as pickupLoc
+    let dropoffLat = trip.dropoffLat;
+    let dropoffLng = trip.dropoffLng;
+    if (!dropoffLat || !dropoffLng) {
+      const dl = trip.dropoffLoc;
+      if (dl) {
+        dropoffLat = dl.latitude || dl.lat;
+        dropoffLng = dl.longitude || dl.lng || dl.lon;
+        if ((!dropoffLat || !dropoffLng) && dl.geopoint) {
+          dropoffLat = dl.geopoint.latitude || dl.geopoint._latitude;
+          dropoffLng = dl.geopoint.longitude || dl.geopoint._longitude;
+        }
+        if (!dropoffLat || !dropoffLng) {
+          dropoffLat = dl._latitude || dl.lat;
+          dropoffLng = dl._longitude || dl.lng || dl.lon;
+        }
+      }
+    }
+
     const message = {
       notification: {
         title: 'New Ride Request!',
@@ -208,8 +260,8 @@ app.post('/notify-drivers', async (req, res) => {
         type: 'new_ride_request',
         pickupLat: pickupLat.toString(),
         pickupLng: pickupLng.toString(),
-        dropoffLat: (trip.dropoffLat || trip.dropoffLoc?.latitude || '').toString(),
-        dropoffLng: (trip.dropoffLng || trip.dropoffLoc?.longitude || '').toString(),
+        dropoffLat: (dropoffLat || '').toString(),
+        dropoffLng: (dropoffLng || '').toString(),
         fare: estimatedFare.toString(),
         distance: (trip.distanceKm || 0).toString(),
         carType: carType,
@@ -225,7 +277,7 @@ app.post('/notify-drivers', async (req, res) => {
       ...message,
     });
 
-    console.log(`Sent ${response.successCount}/${allTokens.length} driver notifications for trip ${tripId}`);
+    console.log(`Trip ${tripId}: notified ${response.successCount}/${allTokens.length} drivers`);
 
     if (response.failureCount > 0) {
       const invalidTokens = [];
