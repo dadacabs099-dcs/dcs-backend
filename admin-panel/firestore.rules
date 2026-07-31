@@ -1,0 +1,224 @@
+// Modified by Jayant Pandit on 2026-07-31 16:35:00 // Reason: Restored permissive rules for app-facing collections.
+// The dev-bypass OTP flow in the Customer & Partner apps NEVER signs into Firebase Auth
+// (anonymous sign-in is DISABLED in this project — verified ADMIN_ONLY_OPERATION), so any
+// "request.auth != null" rule blocks the apps → login can't fetch data → asks to register.
+// Admin-only sensitive collections stay authenticated (admin panel signs in with email/password).
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ── App-facing collections — permissive (dev-bypass apps have no Auth session) ──
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    match /drivers/{driverId} {
+      allow read, write: if true;
+      match /{subcollection=**} {
+        allow read, write: if true;
+      }
+    }
+    match /trips/{tripId} {
+      allow read, write: if true;
+    }
+    match /fareConfigs/{docId} {
+      allow read, write: if true;
+    }
+    match /zones/{docId} {
+      allow read, write: if true;
+    }
+    match /vehicleTypes/{docId} {
+      allow read, write: if true;
+    }
+    match /surgeRules/{docId} {
+      allow read, write: if true;
+    }
+    match /payments/{docId} {
+      allow read, write: if true;
+    }
+    match /trip_ratings/{docId} {
+      allow read, write: if true;
+    }
+    match /driver_earnings/{driverId} {
+      allow read, write: if true;
+      match /{subcollection=**} {
+        allow read, write: if true;
+      }
+    }
+    match /notifications/{docId} {
+      allow read, write: if true;
+    }
+    match /promo_codes/{docId} {
+      allow read, write: if true;
+    }
+    match /saved_addresses/{docId} {
+      allow read, write: if true;
+    }
+    match /support_tickets/{docId} {
+      allow read, write: if true;
+    }
+    match /heat_map_data/{docId} {
+      allow read, write: if true;
+    }
+    match /demand_zones/{docId} {
+      allow read, write: if true;
+    }
+    match /demand_predictions/{docId} {
+      allow read, write: if true;
+    }
+    match /payout_requests/{docId} {
+      allow read, write: if true;
+    }
+    match /emergency_alerts/{docId} {
+      allow read, write: if true;
+    }
+    match /promoBanners/{docId} {
+      allow read, write: if true;
+    }
+    match /states/{docId} {
+      allow read, write: if true;
+    }
+    match /cities/{docId} {
+      allow read, write: if true;
+    }
+    match /countries/{docId} {
+      allow read, write: if true;
+    }
+    match /companies/{docId} {
+      allow read, write: if true;
+    }
+    match /languages/{docId} {
+      allow read, write: if true;
+    }
+    match /currencies/{docId} {
+      allow read, write: if true;
+    }
+    match /faq/{docId} {
+      allow read, write: if true;
+    }
+    match /settings/{docId} {
+      allow read, write: if true;
+    }
+    match /appSettings/{docId} {
+      allow read, write: if true;
+    }
+    match /cancellationReasons/{docId} {
+      allow read, write: if true;
+    }
+    match /subscriptionPlans/{docId} {
+      allow read, write: if true;
+    }
+    match /onboardingSlides/{docId} {
+      allow read, write: if true;
+    }
+    match /etaConfig/{docId} {
+      allow read, write: if true;
+    }
+    match /partnerHomeConfig/{docId} {
+      allow read, write: if true;
+    }
+    match /serviceLocations/{docId} {
+      allow read, write: if true;
+    }
+    match /vehicles/{docId} {
+      allow read, write: if true;
+    }
+    match /fuelTypes/{docId} {
+      allow read, write: if true;
+    }
+    match /goodsTypes/{docId} {
+      allow read, write: if true;
+    }
+    match /owners/{docId} {
+      allow read, write: if true;
+    }
+    match /locations/{docId} {
+      allow read, write: if true;
+    }
+    match /master/{docId} {
+      allow read, write: if true;
+    }
+    match /promoCodes/{docId} {
+      allow read, write: if true;
+    }
+    match /bannerImages/{docId} {
+      allow read, write: if true;
+    }
+    match /fareFixRoutes/{docId} {
+      allow read, write: if true;
+    }
+    match /driverLevels/{docId} {
+      allow read, write: if true;
+    }
+    match /chats/{docId} {
+      allow read, write: if true;
+    }
+    match /messages/{docId} {
+      allow read, write: if true;
+    }
+    match /promo_usage/{docId} {
+      allow read, write: if true;
+    }
+    match /referral_invites/{docId} {
+      allow read, write: if true;
+    }
+    match /referrals/{docId} {
+      allow read, write: if true;
+    }
+    match /scheduled_rides/{docId} {
+      allow read, write: if true;
+    }
+    match /user_subscriptions/{docId} {
+      allow read, write: if true;
+    }
+    match /wallets/{docId} {
+      allow read, write: if true;
+      match /{subcollection=**} {
+        allow read, write: if true;
+      }
+    }
+    match /wallet_transactions/{docId} {
+      allow read, write: if true;
+    }
+    match /Drivers/{docId} {
+      allow read, write: if true;
+    }
+    // Partner-app collections
+    match /claimed_incentives/{docId} {
+      allow read, write: if true;
+    }
+    match /Daily/{docId} {
+      allow read, write: if true;
+    }
+    match /driver_subscriptions/{docId} {
+      allow read, write: if true;
+    }
+    match /incentives/{docId} {
+      allow read, write: if true;
+    }
+    match /reviews/{docId} {
+      allow read, write: if true;
+    }
+
+    // ── Admin-only sensitive collections — authenticated (admin panel uses email/password) ──
+    match /adminUsers/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /roles/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /DailyStats/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /DemandZones/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /auth/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
